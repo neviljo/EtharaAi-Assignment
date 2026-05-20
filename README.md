@@ -37,58 +37,58 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Deploy on Railway (Recommended)
 
-1. Create a Railway project and add a MongoDB (Atlas) add-on or connect an external MongoDB Atlas cluster.
+1. Create a Railway project and add a MongoDB add-on or connect an external MongoDB Atlas cluster.
 2. In Railway, set the following environment variables:
-	- `DATABASE_URL` (MongoDB Atlas connection string)
-	- `JWT_SECRET` (a strong random string)
-	- `NODE_ENV=production`
-	- `PORT` (optional, Railway sets this automatically but `next start` uses 3000 by default)
-4. Set Railway build and start commands:
+   - `DATABASE_URL` (MongoDB Atlas connection string)
+   - `JWT_SECRET` (a strong random string)
+   - `NODE_ENV=production`
 
-	- **Build command:** `npm run build`
-	- **Start command:** `npm start`
+3. Set Railway build and start commands:
+   - **Build command:** `npm run build`
+   - **Start command:** `npm start`
 
-5. Ensure Railway has the environment variable `DATABASE_URL` before the build completes. The install step runs `prisma db push` which requires DB connectivity during build/postinstall. If you prefer to avoid running `prisma db push` during build, remove it from the `postinstall` script and run `npx prisma db push` manually after deployment.
+4. Ensure Railway has `DATABASE_URL` available before the build/install step completes. The `postinstall` script runs `prisma db push`, which requires DB connectivity during install.
 
-6. Trigger a deploy. Railway will install dependencies, run `postinstall` (which runs `prisma generate && prisma db push`), build the Next.js app, and start it.
-3. Connect your GitHub repository to Railway and set the build command to `npm run build` and the start command to `npm start`.
-4. Ensure the `postinstall` script runs (`prisma generate`) or run `npx prisma generate` in the build step.
+5. Trigger a deploy. Railway will install dependencies, run `postinstall` (`prisma generate && prisma db push`), build the app, and start it.
 
-The app should be live once Railway finishes the build and deployment.
+The app should be live once Railway finishes deployment.
 
-## Local development with Postgres (recommended)
+## Local development with MongoDB
 
-This project uses PostgreSQL in production. For local development you can run Postgres using Docker Compose:
+For local development, use a MongoDB Atlas connection string or a local MongoDB instance.
+
+Example `.env` values:
 
 ```bash
-docker compose up -d
-```
-
-Then set your environment variables in a `.env` file (copy from `.env.example`):
-
-```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/taskmanager
+DATABASE_URL="mongodb+srv://<username>:<password>@cluster0.mongodb.net/<dbname>?retryWrites=true&w=majority"
 JWT_SECRET=something_secure_local
 NODE_ENV=development
 ```
 
-Install dependencies and generate Prisma client:
+Install dependencies and generate the Prisma client:
 
 ```bash
 npm install
 npm run prisma:generate
 ```
 
-Run migrations (first time):
+If you need to push Prisma schema to the database locally:
 
 ```bash
-npm run prisma:migrate:dev -- --name init
+npx prisma db push
 ```
 
-Start the dev server:
+Run the dev server:
 
 ```bash
 npm run dev
 ```
 
-If you prefer SQLite for quick tests, you can change the `datasource` in `prisma/schema.prisma` back to `sqlite` and set `DATABASE_URL="file:./dev.db"`, then run `npm run prisma:migrate:dev`.
+If you want a temporary local MongoDB instance instead of Atlas, set:
+
+```bash
+DATABASE_URL="mongodb://127.0.0.1:27017/taskmanager"
+```
+
+then run `npm install`, `npm run prisma:generate`, and `npm run dev`.
+
