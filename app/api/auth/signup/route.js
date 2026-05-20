@@ -66,7 +66,12 @@ export async function POST(request) {
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(
-      { error: "Internal server error." },
+      {
+        error:
+          process.env.NODE_ENV === "production"
+            ? "Internal server error."
+            : error?.message || "Internal server error.",
+      },
       { status: 500 }
     );
   }
