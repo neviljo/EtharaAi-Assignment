@@ -98,9 +98,9 @@ export default function DashboardPage() {
                     <div key={project.id} className="glass-card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
                       
                       {/* Project Header */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--text-primary)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0, overflow: "hidden" }}>
+                          <h3 style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {project.name}
                           </h3>
                           <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>

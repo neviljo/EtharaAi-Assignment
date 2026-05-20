@@ -293,11 +293,11 @@ export default function ProjectPage({ params }) {
               <>
                 <button className="btn btn-secondary" onClick={() => setIsAddMemberOpen(true)}>
                   <UserPlus size={16} />
-                  Add Member
+                  <span className={styles.btnLabel}>Add Member</span>
                 </button>
                 <button className="btn btn-primary" onClick={() => setIsAddTaskOpen(true)}>
                   <Plus size={16} />
-                  Add Task
+                  <span className={styles.btnLabel}>Add Task</span>
                 </button>
                 <button className="btn btn-danger" onClick={handleDeleteProject} title="Delete Project">
                   <Trash size={16} />
