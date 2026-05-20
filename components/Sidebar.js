@@ -1,45 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import styles from "@/styles/sidebar.module.css";
 import { 
   LayoutDashboard, 
   FolderKanban, 
   Plus, 
-  LogOut, 
-  Folder,
+  LogOut,
   Loader2 
 } from "lucide-react";
 
 export default function Sidebar({ onAddProject }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProjects = async () => {
-    try {
-      const res = await fetch("/api/projects");
-      if (res.ok) {
-        const data = await res.json();
-        setProjects(data.projects || []);
-      }
-    } catch (error) {
-      console.error("Error fetching projects for sidebar:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user, pathname]); // Re-fetch on path changes (e.g. project created or deleted)
+    if (!user) return;
+    let mounted = true;
+    fetch("/api/projects")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (mounted) setProjects(data?.projects || []);
+      })
+      .catch(err => console.error("Error fetching projects for sidebar:", err))
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, [user, pathname]);
 
   if (!user) return null;
 

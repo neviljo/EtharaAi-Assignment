@@ -1,69 +1,37 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { comparePassword, generateToken } from "@/lib/auth";
+import { withErrorHandler, loginSchema } from "@/lib/api-utils";
+import { UnauthorizedError } from "@/lib/errors";
 
-export async function POST(request) {
-  try {
-    const { email, password } = await request.json();
+export const POST = withErrorHandler(async (request) => {
+  const { email, password } = loginSchema.parse(await request.json());
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required." },
-        { status: 400 }
-      );
-    }
+  const user = await db.user.findUnique({
+    where: { email: email.toLowerCase() },
+  });
 
-    // Find user
-    const user = await db.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+  if (!user) throw new UnauthorizedError("Invalid email or password.");
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Invalid email or password." },
-        { status: 401 }
-      );
-    }
+  const isPasswordValid = await comparePassword(password, user.password);
+  if (!isPasswordValid) throw new UnauthorizedError("Invalid email or password.");
 
-    // Verify password
-    const isPasswordValid = await comparePassword(password, user.password);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: "Invalid email or password." },
-        { status: 401 }
-      );
-    }
+  const token = generateToken(user);
 
-    // Generate JWT
-    const token = generateToken(user);
+  const response = NextResponse.json({
+    message: "Login successful.",
+    user: { id: user.id, name: user.name, email: user.email },
+  });
 
-    // Create response
-    const response = NextResponse.json({
-      message: "Login successful.",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-    });
+  response.cookies.set({
+    name: "token",
+    value: token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60,
+    path: "/",
+  });
 
-    // Set HTTP-only cookie
-    response.cookies.set({
-      name: "token",
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-      path: "/",
-    });
-
-    return response;
-  } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { error: "Internal server error." },
-      { status: 500 }
-    );
-  }
-}
+  return response;
+});

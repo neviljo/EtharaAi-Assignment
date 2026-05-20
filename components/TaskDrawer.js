@@ -25,8 +25,8 @@ export default function TaskDrawer({
 }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [commentsLoading, setCommentsLoading] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   
   // Editing state for Admin
   const [isEditing, setIsEditing] = useState(false);
@@ -40,35 +40,19 @@ export default function TaskDrawer({
 
   const isAdmin = currentUserRole === "ADMIN";
 
-  // Reset editing state when task changes
+  // Fetch comments when task changes
   useEffect(() => {
-    if (task) {
-      setEditedTitle(task.title || "");
-      setEditedDesc(task.description || "");
-      setEditedPriority(task.priority || "LOW");
-      setEditedDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
-      setEditedAssigneeId(task.assigneeId || "");
-      setIsEditing(false);
-      setError("");
-      fetchComments();
-    }
-  }, [task]);
-
-  const fetchComments = async () => {
     if (!task) return;
-    setCommentsLoading(true);
-    try {
-      const res = await fetch(`/api/tasks/${task.id}/comments`);
-      if (res.ok) {
-        const data = await res.json();
-        setComments(data.comments || []);
-      }
-    } catch (err) {
-      console.error("Error fetching comments:", err);
-    } finally {
-      setCommentsLoading(false);
-    }
-  };
+    let mounted = true;
+    fetch(`/api/tasks/${task.id}/comments`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (mounted) setComments(data?.comments || []);
+      })
+      .catch(err => console.error("Error fetching comments:", err))
+      .finally(() => { if (mounted) setCommentsLoading(false); });
+    return () => { mounted = false; };
+  }, [task]);
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -226,7 +210,15 @@ export default function TaskDrawer({
                 <>
                   <button 
                     className="btn btn-secondary" 
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                      setEditedTitle(task.title || "");
+                      setEditedDesc(task.description || "");
+                      setEditedPriority(task.priority || "LOW");
+                      setEditedDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
+                      setEditedAssigneeId(task.assigneeId || "");
+                      setError("");
+                      setIsEditing(true);
+                    }}
                     style={{ flex: 1, padding: "8px 12px", fontSize: "0.85rem" }}
                   >
                     <Edit3 size={14} />

@@ -1,11 +1,10 @@
 "use client";
 
 import styles from "@/styles/projectstats.module.css";
-import { Folder, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { Briefcase, ListChecks, CheckCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 export default function ProjectStats({ projects = [] }) {
-  // Aggregate stats across all projects
   const totalProjects = projects.length;
   const totalTasks = projects.reduce((sum, p) => sum + (p.tasksCount || 0), 0);
   const completedTasks = projects.reduce((sum, p) => sum + (p.completedTasksCount || 0), 0);
@@ -30,7 +29,7 @@ export default function ProjectStats({ projects = [] }) {
           <span className={styles.statCardTitle}>Projects</span>
           <span className={styles.statCardValue}>{totalProjects}</span>
           <span className={styles.statCardIcon}>
-            <Folder size={24} />
+            <Briefcase size={24} />
           </span>
         </div>
 
@@ -39,7 +38,7 @@ export default function ProjectStats({ projects = [] }) {
           <span className={styles.statCardTitle}>Total Tasks</span>
           <span className={styles.statCardValue}>{totalTasks}</span>
           <span className={styles.statCardIcon}>
-            <Folder size={24} />
+            <ListChecks size={24} />
           </span>
         </div>
 

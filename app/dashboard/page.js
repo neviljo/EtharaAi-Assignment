@@ -4,29 +4,23 @@ import { useEffect, useState } from "react";
 import ProtectedLayout from "@/components/ProtectedLayout";
 import ProjectStats from "@/components/ProjectStats";
 import Loading from "@/components/Loading";
-import { Folder, Plus, ArrowRight, KanbanSquare, Shield } from "lucide-react";
+import { Folder, ArrowRight, KanbanSquare, Shield } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProjects = async () => {
-    try {
-      const res = await fetch("/api/projects");
-      if (res.ok) {
-        const data = await res.json();
-        setProjects(data.projects || []);
-      }
-    } catch (error) {
-      console.error("Dashboard projects fetch error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProjects();
+    let mounted = true;
+    fetch("/api/projects")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (mounted) setProjects(data?.projects || []);
+      })
+      .catch(err => console.error("Dashboard projects fetch error:", err))
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
   }, []);
 
   return (
@@ -40,7 +34,7 @@ export default function DashboardPage() {
               Workspace Dashboard
             </h1>
             <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
-              Overview of your team's project progression and active tasks.
+              Overview of your team&apos;s project progression and active tasks.
             </p>
           </div>
         </div>
@@ -71,7 +65,7 @@ export default function DashboardPage() {
                 No Active Projects
               </h3>
               <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", maxWidth: "380px" }}>
-                You aren't a member of any projects yet. Create a project to start assigning and tracking tasks!
+                You aren&apos;t a member of any projects yet. Create a project to start assigning and tracking tasks.
               </p>
             </div>
             {/* Note: The "+" button in the sidebar will also trigger project creation */}

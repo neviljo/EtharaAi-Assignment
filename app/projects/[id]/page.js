@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import ProtectedLayout from "@/components/ProtectedLayout";
 import TaskCard from "@/components/TaskCard";
 import TaskDrawer from "@/components/TaskDrawer";
@@ -14,14 +15,12 @@ import {
   KanbanSquare, 
   List, 
   Trash2, 
-  Calendar,
-  AlertCircle,
-  User,
   Trash
 } from "lucide-react";
 
 export default function ProjectPage({ params }) {
   const router = useRouter();
+  const { user } = useAuth();
   const { id: projectId } = use(params);
 
   const [project, setProject] = useState(null);
@@ -54,28 +53,26 @@ export default function ProjectPage({ params }) {
 
   const isAdmin = currentUserRole === "ADMIN";
 
-  const fetchProjectDetails = async () => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setProject(data.project);
-        setCurrentUserRole(data.currentUserRole);
-      } else {
-        // Forbidden or Not Found
-        router.push("/dashboard");
-      }
-    } catch (error) {
-      console.error("Error fetching project details:", error);
-      router.push("/dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProjectDetails();
-  }, [projectId]);
+    let mounted = true;
+    fetch(`/api/projects/${projectId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!mounted) return;
+        if (data?.project) {
+          setProject(data.project);
+          setCurrentUserRole(data.currentUserRole);
+        } else {
+          router.push("/dashboard");
+        }
+      })
+      .catch(err => {
+        console.error("Error fetching project details:", err);
+        if (mounted) router.push("/dashboard");
+      })
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, [projectId, router]);
 
   // Task Handlers
   const handleTaskClick = (task) => {
@@ -491,8 +488,7 @@ export default function ProjectPage({ params }) {
                     </div>
 
                     <div className={styles.memberActions}>
-                      {isAdmin && member.userId !== member.projectId ? (
-                        /* Only let ADMIN toggle roles and remove other users */
+                      {isAdmin && member.userId !== user?.id ? (
                         <>
                           <select
                             className={styles.roleSelect}

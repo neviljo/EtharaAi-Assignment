@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 const AuthContext = createContext({
   user: null,
@@ -15,33 +14,42 @@ const AuthContext = createContext({
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
 
-  const checkUser = async () => {
-    try {
-      const res = await fetch("/api/auth/me");
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-      } else {
-        setUser(null);
-        // Redirect to login if on protected route
-        if (pathname !== "/login" && pathname !== "/signup" && pathname !== "/") {
-          router.push("/login");
+  const refreshUser = () => {
+    fetch("/api/auth/me")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
         }
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+      })
+      .catch(() => {
+        setUser(null);
+      });
   };
 
   useEffect(() => {
-    checkUser();
-  }, [pathname]);
+    let mounted = true;
+    fetch("/api/auth/me")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!mounted) return;
+        if (data?.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        if (mounted) setUser(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const login = async (email, password) => {
     const res = await fetch("/api/auth/login", {
@@ -97,7 +105,7 @@ export function AuthProvider({ children }) {
         login,
         signup,
         logout,
-        refreshUser: checkUser,
+        refreshUser,
       }}
     >
       {children}

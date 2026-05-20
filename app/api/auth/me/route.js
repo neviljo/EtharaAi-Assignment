@@ -1,41 +1,18 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-utils";
 import { db } from "@/lib/db";
+import { withErrorHandler } from "@/lib/api-utils";
+import { NotFoundError } from "@/lib/errors";
 
-export async function GET(request) {
-  try {
-    const session = getSessionUser(request);
+export const GET = withErrorHandler(async (request) => {
+  const session = requireAuth(request);
 
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized. Please log in." },
-        { status: 401 }
-      );
-    }
+  const user = await db.user.findUnique({
+    where: { id: session.id },
+    select: { id: true, email: true, name: true },
+  });
 
-    // Retrieve fresh user info from the database
-    const user = await db.user.findUnique({
-      where: { id: session.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
-    });
+  if (!user) throw new NotFoundError("User", session.id);
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "User no longer exists." },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ user });
-  } catch (error) {
-    console.error("Session check error:", error);
-    return NextResponse.json(
-      { error: "Internal server error." },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json({ user });
+});

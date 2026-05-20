@@ -110,7 +110,7 @@ export default function LoginPage() {
         </form>
 
         <div className={styles.footer}>
-          Don't have an account?
+          Don&apos;t have an account?
           <Link href="/signup" className={styles.link}>
             Create one free
           </Link>
